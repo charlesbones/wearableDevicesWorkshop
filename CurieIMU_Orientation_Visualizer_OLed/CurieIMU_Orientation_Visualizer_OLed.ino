@@ -31,7 +31,7 @@
 
   Genuino 101 CurieIMU Orientation Visualiser
   Hardware Required:
-  * Arduino/Genuino 101
+    Arduino/Genuino 101
 
   Modified Nov 2015
   by Helena Bisby <support@arduino.cc>
@@ -63,14 +63,14 @@ int calibrateOffsets = 1; // int to determine whether calibration takes place or
 #define rst  6
 
 Adafruit_SSD1351 tft = Adafruit_SSD1351(cs, dc, rst);
-
+String names[] = {"y", "p", "r"};
 void setup() {
   // initialize Serial communication
   Serial.begin(9600);
 
   // initialize device
   CurieIMU.begin();
-  
+
   if (calibrateOffsets == 1) {
     // use the code below to calibrate accel/gyro offset values
     Serial.println("Internal sensor offsets BEFORE calibration...");
@@ -111,39 +111,37 @@ void setup() {
     Serial.println("");
   }
   tft.begin();
+  tft.fillScreen(0x0000);
 }
-
 void loop() {
   // read raw accel/gyro measurements from device
-  CurieIMU.readMotionSensor(ax, ay, az, gx, gy, gz); 
+  CurieIMU.readMotionSensor(ax, ay, az, gx, gy, gz);
 
   // use function from MagdwickAHRS.h to return quaternions
   filter.updateIMU(gx / factor, gy / factor, gz / factor, ax, ay, az);
 
   // functions to find yaw roll and pitch from quaternions
-  yaw = filter.getYaw();
-  roll = filter.getRoll();
-  pitch = filter.getPitch();
-  
-  // print gyro and accel values for debugging only, comment out when running Processing
-  /*
-  Serial.print(ax); Serial.print("\t");
-  Serial.print(ay); Serial.print("\t");
-  Serial.print(az); Serial.print("\t");
-  Serial.print(gx); Serial.print("\t");
-  Serial.print(gy); Serial.print("\t");
-  Serial.print(gz); Serial.print("\t");
-  Serial.println("");
-  */
+  float mapYaw = mapVal(filter.getYaw(), -1, 1, 10, 76);
+  float mapPitch = mapVal(filter.getPitch(), -1, 1, 10, 76);
+  float mapRoll = mapVal(filter.getRoll(), -1, 1, 10, 76);
 
-  if (Serial.available() > 0) {
-    int val = Serial.read();
-    if (val == 's') { // if incoming serial is "s"
-      Serial.print(yaw);
-      Serial.print(","); // print comma so values can be parsed
-      Serial.print(pitch);
-      Serial.print(","); // print comma so values can be parsed
-      Serial.println(roll);
-    }
+
+  tft.setCursor(0, 0);
+  tft.fillRect(24, 10, 11, 66, 0x0000);
+  tft.fillRect(54, 10, 11, 66, 0x0000);
+  tft.fillRect(84, 10, 11, 66, 0x0000);
+  for (int i = 1; i <= 3; i += 1) {
+    tft.drawLine(i * 30, 10, i * 30, tft.height() - 20, 0xFFFF);
+    tft.setCursor(i * 30, tft.height() - 10);
+    tft.print(names[i - 1]);
   }
+  tft.drawRect(25, mapYaw, 10, 5, 0xFFFF);
+  tft.drawRect(55, mapPitch, 10, 5, 0xFFFF);
+  tft.drawRect(85, mapRoll, 10, 5, 0xFFFF);
+
+}
+//this function works better in this case than the arduino function
+float mapVal(float s, float a1, float a2, float b1, float b2)
+{
+  return b1 + (s - a1) * (b2 - b1) / (a2 - a1);
 }

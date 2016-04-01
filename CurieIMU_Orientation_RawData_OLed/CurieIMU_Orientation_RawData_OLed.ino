@@ -31,7 +31,7 @@
 
   Genuino 101 CurieIMU Orientation Visualiser
   Hardware Required:
-  * Arduino/Genuino 101
+    Arduino/Genuino 101
 
   Modified Nov 2015
   by Helena Bisby <support@arduino.cc>
@@ -63,14 +63,13 @@ int calibrateOffsets = 1; // int to determine whether calibration takes place or
 #define rst  6
 
 Adafruit_SSD1351 tft = Adafruit_SSD1351(cs, dc, rst);
-
 void setup() {
   // initialize Serial communication
   Serial.begin(9600);
 
   // initialize device
   CurieIMU.begin();
-  
+
   if (calibrateOffsets == 1) {
     // use the code below to calibrate accel/gyro offset values
     Serial.println("Internal sensor offsets BEFORE calibration...");
@@ -111,11 +110,12 @@ void setup() {
     Serial.println("");
   }
   tft.begin();
+  tft.fillScreen(0x0000);
 }
 
 void loop() {
   // read raw accel/gyro measurements from device
-  CurieIMU.readMotionSensor(ax, ay, az, gx, gy, gz); 
+  CurieIMU.readMotionSensor(ax, ay, az, gx, gy, gz);
 
   // use function from MagdwickAHRS.h to return quaternions
   filter.updateIMU(gx / factor, gy / factor, gz / factor, ax, ay, az);
@@ -124,26 +124,21 @@ void loop() {
   yaw = filter.getYaw();
   roll = filter.getRoll();
   pitch = filter.getPitch();
-  
-  // print gyro and accel values for debugging only, comment out when running Processing
-  /*
-  Serial.print(ax); Serial.print("\t");
-  Serial.print(ay); Serial.print("\t");
-  Serial.print(az); Serial.print("\t");
-  Serial.print(gx); Serial.print("\t");
-  Serial.print(gy); Serial.print("\t");
-  Serial.print(gz); Serial.print("\t");
-  Serial.println("");
-  */
 
-  if (Serial.available() > 0) {
-    int val = Serial.read();
-    if (val == 's') { // if incoming serial is "s"
-      Serial.print(yaw);
-      Serial.print(","); // print comma so values can be parsed
-      Serial.print(pitch);
-      Serial.print(","); // print comma so values can be parsed
-      Serial.println(roll);
-    }
-  }
+  tft.setTextColor(0xFFFF);
+
+  tft.setCursor(0, 0);
+  tft.println("yaw: ");
+  tft.fillRect(0, 8, 40, 10, 0x0000);
+  tft.println(yaw);
+  tft.setCursor(0, 30);
+  tft.println("roll: ");
+  tft.fillRect(0, 38, 40, 10, 0x0000);
+  tft.println(roll);
+  tft.setCursor(0, 60);
+  tft.println("pitch: ");
+  tft.fillRect(0, 68, 40, 10, 0x0000);
+  tft.println(pitch);+
+
 }
+
